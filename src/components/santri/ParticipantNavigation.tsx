@@ -5,8 +5,8 @@ import ParticipantIcon from './ParticipantIcon';
 const tabs = [
   { label: 'Beranda', icon: 'home', route: '/santri/dashboard' },
   { label: 'Kelas', icon: 'classes', route: '/santri/kelas' },
-  { label: 'Jadwal', icon: 'calendar', route: '/santri/jadwal' },
-  { label: 'Infaq', icon: 'wallet', route: '/santri/infaq' },
+  { label: 'Al-Qur’an', icon: 'book', route: '/santri/quran' },
+  { label: 'Belajar', icon: 'classes', route: '/santri/belajar' },
   { label: 'Profil', icon: 'profile', route: '/santri/profil' },
 ] as const;
 export default function ParticipantNavigation() {
@@ -30,3 +30,4 @@ const styles = StyleSheet.create({
   label: { fontSize: 10, fontWeight: '500', color: '#8a9591' },
   selected: { color: '#17654f', fontWeight: '700' },
 });
+

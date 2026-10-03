@@ -13,9 +13,9 @@ export const ui = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   label: { color: '#047857', fontWeight: '700', fontSize: 13 },
 });
-export function ModuleScreen({ title, subtitle, loading, error, reload, children }: {
+export function ModuleScreen({ title, subtitle, loading, error, reload, children, refreshable = true }: {
   title: string; subtitle: string; loading: boolean; error: string;
-  reload: () => Promise<void>; children: ReactNode;
+  reload: () => Promise<void>; children: ReactNode; refreshable?: boolean;
 }) {
   const router = useRouter(); const insets = useSafeAreaInsets();
   return <View style={{ flex: 1, backgroundColor: '#f6f8f7' }}>
@@ -26,7 +26,7 @@ export function ModuleScreen({ title, subtitle, loading, error, reload, children
       </TouchableOpacity>
       <Text style={{ color: '#213d31', fontSize: 21, fontWeight: '700', flex: 1 }}>{title}</Text>
     </View>
-    <ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} tintColor="#047857" />} contentContainerStyle={{ width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, gap: 16, paddingBottom: 24 }}>
+    <ScrollView refreshControl={refreshable ? <RefreshControl refreshing={loading} onRefresh={() => void reload()} tintColor="#047857" /> : undefined} contentContainerStyle={{ width: '100%', maxWidth: 720, alignSelf: 'center', padding: 20, gap: 16, paddingBottom: 24 }}>
       <Text style={ui.text}>{subtitle}</Text>
       {error ? <View style={[ui.card, { backgroundColor: '#fff0ef' }]}><Text accessibilityRole="alert" style={{ color: '#a32920', lineHeight: 22 }}>{error}</Text><TouchableOpacity accessibilityRole="button" disabled={loading} onPress={() => void reload()}><Text style={ui.label}>Coba kembali</Text></TouchableOpacity></View> : null}
       {loading ? <ActivityIndicator color="#047857" /> : children}
