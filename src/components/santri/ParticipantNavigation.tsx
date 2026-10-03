@@ -13,7 +13,7 @@ export default function ParticipantNavigation() {
   const path = usePathname(); const router = useRouter(); const insets = useSafeAreaInsets();
   return <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
     <View style={styles.inner}>{tabs.map(tab => {
-      const selected = path === tab.route;
+      const selected = path === tab.route || (tab.route === '/santri/belajar' && path === '/santri/materi');
       return <TouchableOpacity accessibilityRole="button" accessibilityLabel={tab.label} accessibilityState={{ selected }} key={tab.route} activeOpacity={0.7} onPress={() => router.replace(tab.route)} style={styles.tab}>
         <View style={[styles.icon, selected && styles.active]}><ParticipantIcon name={tab.icon} size={24} color={selected ? '#17654f' : '#8a9591'} /></View>
         <Text style={[styles.label, selected && styles.selected]}>{tab.label}</Text>
@@ -30,4 +30,3 @@ const styles = StyleSheet.create({
   label: { fontSize: 10, fontWeight: '500', color: '#8a9591' },
   selected: { color: '#17654f', fontWeight: '700' },
 });
-

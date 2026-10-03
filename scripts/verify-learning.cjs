@@ -39,6 +39,10 @@ async function run() {
     assert.equal(JSON.stringify(await restored.readPreference(1, 'study')), '["arab-benda"]', `${os}: fresh module must restore saved progress`);
     await restored.writePreference(1, 'study-program', 'arab');
     assert.equal(await exports.readPreference(1, 'study-program'), 'arab');
+    await Promise.all([restored.mergeStudyCompletion(1, ['iqro-huruf']), restored.mergeStudyCompletion(1, ['tahsin-harakat'])]);
+    const merged = await exports.readPreference(1, 'study');
+    assert.equal(merged.length, 3);
+    assert(merged.includes('arab-benda') && merged.includes('iqro-huruf') && merged.includes('tahsin-harakat'));
     memory.set('deepquran.1.study', 'broken JSON');
     assert.equal(await exports.readPreference(1, 'study'), null);
   }
@@ -53,6 +57,46 @@ async function run() {
     assert(lesson.answer >= 0 && lesson.answer < lesson.options.length);
     assert(lesson.examples.length > 0 && lesson.feedback);
   }
-  console.log('PASS: Quran request isolation, invalid data/network errors, native/web persistence and participant isolation, lesson catalog.');
+  const memory = new Map();
+  const storage = load('src/services/learning-storage.ts', {
+    'react-native': { Platform: { OS: 'android' } },
+    'expo-secure-store': { getItemAsync: async key => memory.get(key) ?? null, setItemAsync: async (key, value) => memory.set(key, value) },
+  });
+  let remote = ['arab-benda']; let bookmark = null; let fail = false;
+  const api = {
+    get: async url => {
+      if (fail) throw new Error('offline');
+      return { data: { data: url === '/learning/progress' ? { completed: remote, student_program: 'bahasa' } : bookmark } };
+    },
+    post: async (url, body) => {
+      if (fail) throw new Error('offline');
+      if (url === '/learning/progress') remote = Array.from(new Set([...remote, ...body.lesson_ids]));
+      else bookmark = body;
+    },
+  };
+  const sync = load('src/services/learning-sync.ts', { './api': { api }, '../data/self-study': { studyPrograms }, './learning-storage': storage });
+  await storage.mergeStudyCompletion(1, ['iqro-huruf']);
+  const result = await sync.syncStudyProgress(1);
+  assert.equal(result.studentProgram, 'bahasa');
+  assert.deepEqual(Array.from(result.completed).sort(), ['arab-benda', 'iqro-huruf']);
+  assert.deepEqual(remote.sort(), ['arab-benda', 'iqro-huruf']);
+  fail = true;
+  await storage.mergeStudyCompletion(1, ['tahsin-harakat']);
+  await assert.rejects(() => sync.syncStudyProgress(1), /offline/);
+  assert((await storage.readPreference(1, 'study')).includes('tahsin-harakat'), 'Offline sync must preserve new local progress');
+  const pendingMark = { surah: 1, verse: 3, name: 'Al-Fatihah' };
+  await assert.rejects(() => sync.saveServerBookmark(1, pendingMark), /offline/);
+  assert.equal((await storage.readPreference(1, 'reading-pending')).verse, 3);
+  fail = false;
+  await sync.syncStudyProgress(1);
+  assert(remote.includes('tahsin-harakat'), 'Retry must upload pending progress');
+  const restoredMark = await sync.syncReadingBookmark(1);
+  assert.equal(restoredMark.verse, 3);
+  assert.equal(bookmark.ayat_nomor, 3);
+  assert.equal(await storage.readPreference(1, 'reading-pending'), null);
+  bookmark = { surat_nomor: 2, ayat_nomor: 10 };
+  assert.equal((await sync.syncReadingBookmark(2)).verse, 10, 'A second device/account can restore server bookmark');
+  assert.equal((await storage.readPreference(1, 'reading')).verse, 3, 'Bookmark caches remain isolated');
+  console.log('PASS: Quran request isolation, native/web persistence, concurrent progress merging, account isolation, offline sync and bookmark retry, lesson catalog.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });
