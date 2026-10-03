@@ -24,3 +24,11 @@ npx expo export --platform web
 ```
 
 Uji di emulator: buka keenam menu; cari dan buka surah; tandai ayat, kembali ke daftar, lanjutkan bacaan; jawab kuis; tutup/buka aplikasi untuk memeriksa penyimpanan; ganti akun untuk memeriksa pemisahan progres.
+
+## Penyempurnaan font dan progres
+
+- Font Amiri Quran dimuat dari aset paket `@expo-google-fonts/amiri-quran`, melalui `expo-font`. Berlaku pada bacaan dan latihan Arab. Teks tetap berasal dari EQuran.id.
+- Progres dan pilihan program dimuat kembali saat halaman Belajar mendapat fokus. Program terakhir dipertahankan, sehingga progres program lain tidak tampak sebagai hilang.
+- Setelah simpan, aplikasi membaca kembali nilai dari penyimpanan sebelum menyatakan berhasil. Kegagalan baca tidak boleh menyebabkan progres lama tertimpa.
+- Ringkasan dan batang progres terlihat di daftar dan halaman latihan. Kembali ke daftar menampilkan indikator latihan selesai. Penanda bacaan juga dibaca ulang saat menu Al-Qur’an mendapat fokus.
+- Pembaruan ini membutuhkan `npm install` setelah `git pull` untuk memasang paket font baru.

@@ -34,9 +34,18 @@ async function run() {
     await exports.writePreference(1, 'study', ['arab-benda']);
     assert.equal(JSON.stringify(await exports.readPreference(1, 'study')), '["arab-benda"]');
     assert.equal(await exports.readPreference(2, 'study'), null, `${os}: participant progress must be isolated`);
+    const restored = {};
+    vm.runInNewContext(source, { exports: restored, window, require: name => name === 'react-native' ? { Platform: { OS: os } } : { getItemAsync: async key => memory.get(key) ?? null, setItemAsync: async (key, value) => memory.set(key, value) } });
+    assert.equal(JSON.stringify(await restored.readPreference(1, 'study')), '["arab-benda"]', `${os}: fresh module must restore saved progress`);
+    await restored.writePreference(1, 'study-program', 'arab');
+    assert.equal(await exports.readPreference(1, 'study-program'), 'arab');
     memory.set('deepquran.1.study', 'broken JSON');
     assert.equal(await exports.readPreference(1, 'study'), null);
   }
+  const failingStorage = {};
+  const storageSource = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/services/learning-storage.ts'), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  vm.runInNewContext(storageSource, { exports: failingStorage, require: name => name === 'react-native' ? { Platform: { OS: 'android' } } : { getItemAsync: async () => null, setItemAsync: async () => {} } });
+  await assert.rejects(() => failingStorage.writePreference(1, 'study', ['arab-benda']), /diverifikasi/, 'A silently discarded write must not report success');
   const { studyPrograms } = load('src/data/self-study.ts');
   const ids = new Set();
   for (const program of studyPrograms) for (const lesson of program.lessons) {

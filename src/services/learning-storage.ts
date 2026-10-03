@@ -14,6 +14,10 @@ export async function writePreference(userId: number, name: string, value: unkno
   const key = `deepquran.${userId}.${name}`;
   const serialized = JSON.stringify(value);
   if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined') window.localStorage.setItem(key, serialized);
+    if (typeof window === 'undefined') throw new Error('Penyimpanan perangkat belum tersedia.');
+    window.localStorage.setItem(key, serialized);
   } else await SecureStore.setItemAsync(key, serialized);
+  // Confirm durable storage before the UI reports completion.
+  const saved = await readPreference<unknown>(userId, name);
+  if (JSON.stringify(saved) !== serialized) throw new Error('Hasil penyimpanan belum dapat diverifikasi.');
 }
